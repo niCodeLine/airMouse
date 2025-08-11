@@ -12,7 +12,7 @@ git clone https://github.com/niCodeLine/airMouse.git
 ```
 And intall the requirements.
 
-## Requirements
+### Requirements
 I've noticed that installations of modules and packages needed work better with lower versions of python.
 
 The latest that had worked for me is 3.11.13, so to create a virtual environment is recomended. My favorite way is with ```pyenv```.
