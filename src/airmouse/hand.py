@@ -1,12 +1,4 @@
-"""Small, dependency-free geometry model for a tracked human hand.
-
-This module represents the 21 landmarks returned by MediaPipe-style hand
-tracking and provides a few simple geometric helpers used by the gesture layer.
-
-There is intentionally no OpenCV, MediaPipe, webcam, or macOS dependency here.
-The goal is to keep hand geometry easy to understand, deterministic, and easy
-to test.
-"""
+"""Geometría de la mano, independiente de la cámara y del escritorio."""
 
 from __future__ import annotations
 
@@ -17,11 +9,7 @@ from enum import IntEnum
 
 
 class Landmark(IntEnum):
-    """Canonical indices of the 21 hand landmarks.
-
-    The values match MediaPipe's landmark ordering exactly, so we can use
-    readable names such as `Landmark.INDEX_TIP` instead of raw indices like 8.
-    """
+    """Los 21 puntos: MCP es nudillo, PIP/IP articulación y TIP punta del dedo."""
 
     WRIST = 0
 
@@ -53,44 +41,20 @@ class Landmark(IntEnum):
 
 @dataclass(frozen=True)
 class Point:
-    """A normalized 3D landmark reported by the hand tracker.
-
-    Coordinates are normally normalized rather than expressed in pixels.
-
-    Attributes:
-        x: Horizontal position.
-        y: Vertical position.
-        z: Relative depth.
-    """
+    """Punto de la mano: x e y normalizados; z indica profundidad relativa."""
 
     x: float
     y: float
     z: float = 0.0
 
     def distance_to(self, other: Point) -> float:
-        """Return the Euclidean 3D distance to another point."""
+        """Devuelve la distancia 3D desde este punto hasta otro."""
 
-        return math.dist(
-            (self.x, self.y, self.z),
-            (other.x, other.y, other.z),
-        )
+        return math.dist((self.x, self.y, self.z), (other.x, other.y, other.z))
 
 
 class HandLandmarks(Sequence[Point]):
-    """Represent the 21 landmarks of a single tracked hand.
-
-    The object behaves like a normal sequence, but landmarks can be accessed
-    with the `Landmark` enum:
-
-        hand[Landmark.INDEX_TIP]
-
-    instead of relying on less readable raw indices:
-
-        hand[8]
-
-    This class also provides the basic geometry needed by the gesture
-    interpreter, such as normalized distances and finger-extension checks.
-    """
+    """Guarda los 21 puntos; se consultan por nombre, como hand[Landmark.INDEX_TIP]."""
 
     LANDMARK_COUNT = 21
 
@@ -113,22 +77,14 @@ class HandLandmarks(Sequence[Point]):
 
     @property
     def palm_size(self) -> float:
-        """Return a rough scale reference for the current hand.
-
-        The wrist-to-middle-MCP distance is used as an approximation of hand
-        size. Other distances can be divided by this value so gesture
-        thresholds remain relatively stable when the hand moves closer to or
-        farther from the camera.
-
-        A tiny lower bound avoids division by zero if a malformed frame is
-        received from the tracker.
-        """
+        """Devuelve el tamaño de la palma, usado para normalizar distancias."""
 
         wrist = self[Landmark.WRIST]
         middle_mcp = self[Landmark.MIDDLE_MCP]
 
         size = wrist.distance_to(middle_mcp)
 
+        # Evita dividir por cero cuando el detector devuelve puntos coincidentes.
         return max(size, 1e-6)
 
     def normalized_distance(
@@ -136,12 +92,7 @@ class HandLandmarks(Sequence[Point]):
         first: Landmark,
         second: Landmark,
     ) -> float:
-        """Return the distance between two landmarks relative to hand size.
-
-        Raw landmark distances change when the hand moves toward or away from
-        the webcam. Dividing by `palm_size` makes gesture thresholds much less
-        dependent on camera distance.
-        """
+        """Devuelve la distancia entre dos puntos dividida por el tamaño de la palma."""
 
         distance = self[first].distance_to(self[second])
 
@@ -154,14 +105,7 @@ class HandLandmarks(Sequence[Point]):
         *,
         threshold: float = 1.15,
     ) -> bool:
-        """Estimate whether a non-thumb finger is extended.
-
-        For an extended finger, the fingertip should be noticeably farther
-        from the wrist than its PIP joint.
-
-        `threshold` adds a small margin so tiny tracking fluctuations do not
-        constantly flip the result between extended and folded.
-        """
+        """Indica si la punta supera a la articulación en distancia a la muñeca."""
 
         wrist = self[Landmark.WRIST]
 
@@ -171,23 +115,11 @@ class HandLandmarks(Sequence[Point]):
         return tip_distance > pip_distance * threshold
 
     def thumb_extended(self, *, threshold: float = 1.15) -> bool:
-        """Estimate whether the thumb is extended.
-
-        The thumb moves differently from the other fingers, so using the same
-        wrist-to-tip comparison is not very reliable.
-
-        Instead, the pinky MCP is used as an anchor on the opposite side of
-        the palm. When the thumb is extended, its tip should be farther from
-        that anchor than the thumb's IP joint.
-        """
+        """Detecta el pulgar extendido respecto al nudillo del meñique."""
 
         anchor = self[Landmark.PINKY_MCP]
 
-        thumb_tip_distance = anchor.distance_to(
-            self[Landmark.THUMB_TIP]
-        )
-        thumb_ip_distance = anchor.distance_to(
-            self[Landmark.THUMB_IP]
-        )
+        thumb_tip_distance = anchor.distance_to(self[Landmark.THUMB_TIP])
+        thumb_ip_distance = anchor.distance_to(self[Landmark.THUMB_IP])
 
         return thumb_tip_distance > thumb_ip_distance * threshold

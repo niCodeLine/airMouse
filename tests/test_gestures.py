@@ -40,11 +40,16 @@ def test_open_motion_defaults_to_cursor_movement():
         thumb=True,
     )
 
-    assert GestureInterpreter().interpret(hand).gesture is Gesture.MOVE
+    assert (
+        GestureInterpreter(pinch_threshold=0.32).interpret(hand).gesture is Gesture.MOVE
+    )
 
 
 def test_fist_pauses_tracking():
-    assert GestureInterpreter().interpret(pose()).gesture is Gesture.PAUSE
+    assert (
+        GestureInterpreter(pinch_threshold=0.32).interpret(pose()).gesture
+        is Gesture.PAUSE
+    )
 
 
 def test_middle_finger_pinch_with_pinky_up_drags():
@@ -53,4 +58,6 @@ def test_middle_finger_pinch_with_pinky_up_drags():
         touches=Landmark.MIDDLE_TIP,
     )
 
-    assert GestureInterpreter().interpret(hand).gesture is Gesture.DRAG
+    assert (
+        GestureInterpreter(pinch_threshold=0.32).interpret(hand).gesture is Gesture.DRAG
+    )
