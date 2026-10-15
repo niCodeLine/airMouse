@@ -19,6 +19,7 @@ class Gesture(str, Enum):
     VOLUME = "volume"
     BRIGHTNESS = "brightness"
 
+    MISSION_CONTROL = "mission_control"
     PAUSE = "pause"
     RESUME = "resume"
     QUIT = "quit"
@@ -156,6 +157,16 @@ class GestureInterpreter:
 
         if self._touches(hand, Landmark.MIDDLE_TIP) and pinky_extended:
             return GestureResult(gesture=Gesture.DRAG, cursor=cursor)
+
+        # Surf: Pulgar y Meñique arriba, sin confundirlo con los contactos anteriores.
+        if (
+            thumb_extended
+            and pinky_extended
+            and not index_extended
+            and not middle_extended
+            and not ring_extended
+        ):
+            return GestureResult(gesture=Gesture.MISSION_CONTROL, cursor=cursor)
 
         # Desplazar: pulgar e índice juntos y los otros tres dedos arriba.
         if (

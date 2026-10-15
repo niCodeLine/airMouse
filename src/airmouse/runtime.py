@@ -28,12 +28,21 @@ class RuntimeConfig:
 
 
 class Desktop:
-    """Acceso a los controles de macOS y al paro de emergencia del ratón."""
+    """Acceso a los controles de macOS."""
 
     def __init__(self, pyautogui) -> None:
         self.gui = pyautogui
-        # Mover el cursor a una esquina permite detener el control automático.
-        self.gui.FAILSAFE = True
+        # Las esquinas no detienen airMouse; se sale con Ctrl+C o el gesto de salida.
+        self.gui.FAILSAFE = False
+
+    def show_mission_control(self) -> None:
+        """Abre Mission Control con la aplicación de macOS; avisa si falla."""
+        try:
+            subprocess.run(
+                ["open", "-a", "Mission Control"], check=True, capture_output=True
+            )
+        except (OSError, subprocess.CalledProcessError) as error:
+            logger.warning("No se pudo abrir Mission Control: %s", error)
 
     def set_volume(self, value: float) -> None:
         """Establece el volumen de macOS con un porcentaje de 0 a 100."""
@@ -151,6 +160,9 @@ def run(config: RuntimeConfig) -> int:
     paused = False
     dragging = False
     last_right_click = 0.0
+    # Zona de activación en píxeles, en la esquina superior derecha.
+    corner_size = 10
+    was_in_corner = False
     camera = cv2.VideoCapture(config.camera)
 
     try:
@@ -179,6 +191,7 @@ def run(config: RuntimeConfig) -> int:
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 result = tracker.process(rgb_frame)
 
+                mission_control_requested = False
                 if result.multi_hand_landmarks:
                     tracked = result.multi_hand_landmarks[0]
                     hand = HandLandmarks(
@@ -197,6 +210,9 @@ def run(config: RuntimeConfig) -> int:
                         paused = False
 
                     if not paused:
+                        mission_control_requested = (
+                            stable and gesture is Gesture.MISSION_CONTROL
+                        )
                         x, y = mapper.map(intent.cursor)
                         if gesture in {Gesture.MOVE, Gesture.DRAG}:
                             pyautogui.moveTo(x, y, _pause=False)
@@ -225,6 +241,23 @@ def run(config: RuntimeConfig) -> int:
 
                     if config.preview:
                         _draw_preview(cv2, mp, frame, tracked, hand, intent, paused)
+
+                else:
+                    # Retirar la mano permite volver a activar un gesto sostenido.
+                    command_hold = GestureHold(command_hold.frames)
+
+                cursor_x, cursor_y = pyautogui.position()
+                in_corner = (
+                    screen_width - corner_size <= cursor_x < screen_width
+                    and 0 <= cursor_y < corner_size
+                )
+                if (
+                    not paused
+                    and not dragging
+                    and (mission_control_requested or (in_corner and not was_in_corner))
+                ):
+                    desktop.show_mission_control()
+                was_in_corner = in_corner
 
                 # Ocultar la ventana no detiene la captura ni el reconocimiento.
                 if config.preview:

@@ -12,18 +12,20 @@ from . import runtime
 STARTUP_GUIDE = """
 GESTO                                 ACCIÓN
 Mano abierta                          Mover cursor
-Pulgar + dedo medio¹                  Clic y arrastre
-Pulgar + anular¹                      Clic derecho
-Pulgar + índice, otros dedos arriba   Scroll al inclinar el índice
-Índice arriba, separar del pulgar     Volumen
-Rock 🤘, separar índice y pulgar      Brillo
+Pulgar + Dedo Medio¹                  Clic y arrastre
+Pulgar + Anular¹                      Clic derecho
+Pulgar + Índice, otros dedos arriba   Scroll al inclinar el Índice
+Índice arriba, separar del Pulgar     Volumen
+Rock 🤘, separar Índice y Pulgar      Brillo
+Mantener Surf 🤙: Pulgar y Meñique     Mission Control
+Esquina superior derecha              Mission Control
 Mantener puño cerrado                 Pausar
 Mantener signo de paz ✌               Reanudar
 Tres dedos arriba²                    Salir
 Ctrl+C                                Salir desde la terminal
 
-¹ Con el meñique levantado.
-² Índice, medio y anular; pulgar tocando el meñique.
+¹ Con el Meñique levantado.
+² Índice, Medio y Anular; Pulgar tocando el Meñique.
 """
 
 

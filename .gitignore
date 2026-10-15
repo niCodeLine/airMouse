@@ -1,0 +1,6 @@
+*.pyc
+.DS_Store
+src/airmouse/__pycache__/cli.cpython-311.pyc
+src/airmouse/__pycache__/gestures.cpython-311.pyc
+src/airmouse/__pycache__/runtime.cpython-311.pyc
+src/airmouse/__pycache__/runtime.cpython-311.pyc

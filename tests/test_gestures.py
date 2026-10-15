@@ -61,3 +61,21 @@ def test_middle_finger_pinch_with_pinky_up_drags():
     assert (
         GestureInterpreter(pinch_threshold=0.32).interpret(hand).gesture is Gesture.DRAG
     )
+
+
+def test_surf_sign_opens_mission_control():
+    hand = pose(extended={Landmark.PINKY_TIP}, thumb=True)
+
+    assert (
+        GestureInterpreter(pinch_threshold=0.32).interpret(hand).gesture
+        is Gesture.MISSION_CONTROL
+    )
+
+
+def test_rock_sign_still_controls_brightness():
+    hand = pose(extended={Landmark.INDEX_TIP, Landmark.PINKY_TIP}, thumb=True)
+
+    assert (
+        GestureInterpreter(pinch_threshold=0.32).interpret(hand).gesture
+        is Gesture.BRIGHTNESS
+    )
